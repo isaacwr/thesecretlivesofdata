@@ -17,6 +17,7 @@ define([], function () {
                         + '<h2 style="visibility:visible">Distributed Consensus Algorithm</h2>'
                         + '<br/>' + frame.model().controls.html();
             layout.invalidate();
+            frame.model().controls.show();
         })
         .after(100, function () {
             player.next();
