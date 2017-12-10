@@ -62,10 +62,6 @@ define([], function () {
             frame.model().clients.create("X");
             layout.invalidate();
         })
-        .after(200, function() {
-            model().subtitle = '<h2>The system is up and running with a <span style="color:green">client</span> making requests</h2>';
-            layout.invalidate();
-        })
         .after(500, function () {
             client("X").value("4")
             layout.invalidate();
@@ -104,20 +100,19 @@ define([], function () {
             model().send(node("B"), node("C"), {type:"ACCEPT"})
             layout.invalidate();
         })
-        .after(1500, function() {
+        .after(1300, function() {
             node("A")._value = "4";
             node("C")._value = "4";
             layout.invalidate();
         })
-        .after(1000, function () {
+        .after(800, function () {
             model().send(node("A"), node("B"), {type:"ACKNOWLEDGE"}, function () {})
             model().send(node("C"), node("B"), {type:"ACKNOWLEDGE"}, function () { })
             layout.invalidate();
         })
         .after(100, function () {
             frame.snapshot();
-            model().subtitle = '<h2>Now what happens when an acceptor fails in the next round?</h2>'
-                           + model().controls.html();
+            subtitle('<h2>Now what happens when an <em>Acceptor</em> fails in the next round?</h2>')
             layout.invalidate();
         })
         .after(100, wait).indefinite()
@@ -144,8 +139,7 @@ define([], function () {
         })
         .after(400, function() {
             frame.snapshot();
-            model().subtitle = '<h2> Now an <em>Acceptor</em> becomes unresponsive.</h2>'
-                           + model().controls.html();
+            subtitle('<h2> Now an <em>Acceptor</em> becomes unresponsive.</h2>')
             layout.invalidate();
         })
         .after(1, wait).indefinite()
@@ -155,8 +149,7 @@ define([], function () {
         })
         .after(1000, function () {
             frame.snapshot();
-            model().subtitle = '<h2> The <em> Proposer </em> still receives a response from a majority of <em>Acceptors</em> so the round continues</h2>'
-                           + model().controls.html();
+            subtitle('<h2> The <em> Proposer </em> still receives a response from a majority of <em>Acceptors</em> so the round continues</h2>')
             layout.invalidate();
         })
         .after(1, wait).indefinite()
@@ -173,8 +166,7 @@ define([], function () {
         })
         .after(1000, function () {
             frame.snapshot();
-            model().subtitle = '<h2>If the <em>Acceptor</em> recovers, it will learn the current <em>Coordinator</em> via a <em>Propose</em> message and the latest value via an <em>Accept</em> message.</h2>'
-                           + model().controls.html();
+            subtitle('<h2>If the <em>Acceptor</em> recovers, it will learn the current <em>Coordinator</em> via a <em>Propose</em> message and the latest value via an <em>Accept</em> message.</h2>');
             layout.invalidate();
         })
         .after(100, wait).indefinite()
@@ -227,10 +219,204 @@ define([], function () {
         })
         .after(1000, function () {
             frame.snapshot();
-            model().subtitle = '<h2>But what happens when</h2>'
+            model().subtitle = '<h2>But what happens when a proposer fails?</h2>'
                            + model().controls.html();
             layout.invalidate();
         })
+        .after(100, wait).indefinite()
+
+        //------------------------------
+        // Failure of a Proposer
+        //------------------------------
+        .after(100, function() {
+            model().clear();
+            layout.invalidate();
+        })
+        .after(300, function () {
+            model().nodes.create("A");
+            model().nodes.create("B");
+            model().nodes.create("C");
+            model().nodes.create("D");
+            model().clients.create("Y");
+            
+            cluster(["A", "B", "C", "D"]);
+            layout.invalidate();
+        })
+        .after(100, function() {
+            subtitle('<h2>Again, the system is up and running with a <span style="color:green">client</span> making requests</h2>'); 
+            layout.invalidate();
+        })
+        .after(1, wait).indefinite()
+        .after(100, function () {
+            client("Y").value("6")
+            layout.invalidate();
+        })
+        .after(100, function () {
+            frame.model().send(client("Y"), node("B"), null, function() {
+                node("B")._value = "6";
+                node("B")._currentSeqId = 2;
+                node("B")._state = "proposer";
+                layout.invalidate();
+            });
+            layout.invalidate();
+        })
+        .after(1000, function () {
+            model().send(node("B"), node("A"), {type:"PROPOSE"}, function () {
+                node("A")._currentSeqId = 2;
+                node("A")._coordinatorId = "B";
+            });
+            model().send(node("B"), node("C"), {type:"PROPOSE"}, function () {
+                node("C")._currentSeqId = 2;
+                node("C")._coordinatorId = "B";
+            });
+            model().send(node("B"), node("D"), {type:"PROPOSE"}, function () {
+                node("D")._currentSeqId = 2;
+                node("D")._coordinatorId = "B";
+            });
+            layout.invalidate();
+        })
+        .after(1500, function () {
+            model().send(node("A"), node("B"), {type:"PROMISE"})
+            model().send(node("C"), node("B"), {type:"PROMISE"})
+            model().send(node("D"), node("B"), {type:"PROMISE"})
+            layout.invalidate();
+        })
+        .after(1000, function () {
+            node("B")._state = "coordinator";
+            layout.invalidate();
+        })
+        .after(1000, function () {
+            model().send(node("B"), node("A"), {type:"ACCEPT"})
+            model().send(node("B"), node("C"), {type:"ACCEPT"})
+            model().send(node("B"), node("D"), {type:"ACCEPT"})
+            layout.invalidate();
+        })
+        .after(1500, function() {
+            node("A")._value = "6";
+            node("C")._value = "6";
+            node("D")._value = "6";
+            layout.invalidate();
+        })
+        .after(1000, function () {
+            model().send(node("A"), node("B"), {type:"ACKNOWLEDGE"}, function () {})
+            model().send(node("C"), node("B"), {type:"ACKNOWLEDGE"}, function () {})
+            model().send(node("D"), node("B"), {type:"ACKNOWLEDGE"}, function () {})
+            layout.invalidate();
+        })
+        .after(100, function () {
+            frame.snapshot();
+            model().subtitle = '<h2>Now what happens when the proposer fails next round?</h2>'
+                           + model().controls.html();
+            layout.invalidate();
+        })
+        .after(100, wait).indefinite()
+        .after(100, function () {
+            client("Y").value("X"); 
+            frame.model().send(client("Y"), node("B"), null, function() {
+                node("B")._value = "X";
+                node("B")._currentSeqId = 5;
+                layout.invalidate();
+            });
+            layout.invalidate();
+        })
+        .after(1000, function () {
+            model().send(node("B"), node("A"), {type:"PROPOSE"}, function () {
+                node("A")._currentSeqId = 5;
+            });
+            model().send(node("B"), node("C"), {type:"PROPOSE"}, function () {
+                node("C")._currentSeqId = 5;
+            });
+            model().send(node("B"), node("D"), {type:"PROPOSE"}, function () {
+                node("D")._currentSeqId = 5;
+            });
+            layout.invalidate();
+        })
+        .after(1500, function () {
+            model().send(node("A"), node("B"), {type:"PROMISE"})
+            model().send(node("C"), node("B"), {type:"PROMISE"})
+            model().send(node("D"), node("B"), {type:"PROMISE"})
+            layout.invalidate();
+        })
+        .after(500, function () {
+            frame.snapshot()
+            model().subtitle = '<h2>The <em>Proposer</em> now fails broadcasting the Accept message</h2>'
+                         + model().controls.html();
+            node("B")._state = "stopped";
+            layout.invalidate();
+        })
+        .after(100, wait).indefinite()
+        .after(100, function () {
+            frame.snapshot()
+            model().subtitle = '<h2>Now it is important that the most recent promise made by the <em>Replicas</em> had a high Sequence ID</h2>'
+                         + model().controls.html();
+            layout.invalidate();
+        })
+        .after(100, wait).indefinite()
+        .after(100, function () {
+            model().subtitle = '<h2>A new request is received with a lower Sequence ID.</h2>'
+                         + model().controls.html();
+            model().clients.create("Z")
+            layout.invalidate();
+        })
+        .after(200, function () {
+            model().send(client("Z"), node("C"), null, function () {
+                  node("C")._state = "proposer"
+                  
+            });
+            layout.invalidate();
+        })
+        .after(300, function () {
+            model().send(node("C"), node("A"), {type:"PROPOSE"}, function () {
+                model().send(node("A"), node("C"), {type: "PROMISE"});
+            });
+            model().send(node("C"), node("D"), {type:"PROPOSE"}, function () {
+                model().send(node("D"), node("C"), {type: "PROMISE"});
+                node("C")._state = "coordinator";
+                node("C").value("X")
+            });
+            layout.invalidate();
+        })
+        .after(200, function () {
+            frame.snapshot()
+            model().subtitle = '<h2>The <em>Replicas</em> respond with the higher Sequence ID from the previous round, along with its related value</h2>'
+                         + model().controls.html();
+            layout.invalidate();
+        })
+        .after(100, wait).indefinite()
+        .after(100, function () {
+            model().subtitle = '<h2>Now the new leader broadcasts the Accept message.</h2>'
+                         + model().controls.html();
+            layout.invalidate();
+        })
+        .after(100, wait).indefinite()
+        .after(100, function () {
+            model().send(node("C"), node("A"), {type:"ACCEPT"}, function () {
+                node("A")._value = "X";
+                model().send(node("A"), node("C"), {type: "ACKNOWLEDGE"})
+            })
+            model().send(node("C"), node("D"), {type:"ACCEPT"}, function () {
+                node("D")._value = "X";
+                model().send(node("D"), node("C"), {type: "ACKNOWLEDGE"})
+            })
+            layout.invalidate();
+        })
+        .after(500, function () {
+            frame.snapshot();
+            model().subtitle = '<h2> The new coordinator now returns a response to the <span style="color:green">clients</span> with their results.</h2>'
+                         + model().controls.html();
+        })
+        .after(1500, function() {
+            model().send(node("C"), client("Y"), null, function () {});
+            model().send(node("C"), client("Z"), null, function () {});
+            layout.invalidate();
+        })
+        .after(15000, function () {
+            frame.snapshot();
+            model().subtitle = '<h2>BOTTOM OF PROPOSER FAILURE</h2>'
+            layout.invalidate();
+        })
+
+
 
         //------------------------------
         // Candidacy
