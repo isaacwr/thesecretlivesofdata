@@ -130,7 +130,7 @@ define([], function () {
             model().send(node('B'), node('C'), {type:'PROPOSE'});
             layout.invalidate();
         })
-        .after(400, function() {
+        .after(500, function() {
             frame.snapshot();
             subtitle('<h2> Now an <em>Acceptor</em> becomes unresponsive.</h2>')
             layout.invalidate();
@@ -370,7 +370,7 @@ define([], function () {
             layout.invalidate();
         })
         .after(3000, function () {
-            subtitle('<h2> The new coordinator now returns a response to the <span style="color:green">clients</span> with their results.</h2>');
+            subtitle('<h2>The new coordinator now returns a response to the <span style="color:green">clients</span> with their results.</h2>');
             layout.invalidate();
         })
         .after(100, function() {
@@ -387,12 +387,12 @@ define([], function () {
         //------------------------------
         // Dueling Proposers
         //------------------------------
-        .after(100, function() {
-            subtitle('<h2>The final error case is called Dueling Proposers, where two concurrent proposers are not able to complete a full round.</h2>');
-            layout.invalidate();
-        })
         .after(100, function () {
             model().clear();
+            layout.invalidate();
+        })
+        .after(100, function() {
+            subtitle('<h2>The final error case is called Dueling Proposers, where two concurrent proposers are not able to complete a full round.</h2>');
             layout.invalidate();
         })
         .after(100, function () {
@@ -400,181 +400,210 @@ define([], function () {
             model().nodes.create('B');
             model().nodes.create('C');
             model().nodes.create('D');
+            model().nodes.create('E');
             model().clients.create('M');
-            model().clients.create('N');
             
-            cluster(['A', 'B', 'C', 'D']);
+            cluster(['A', 'B', 'C', 'D', 'E']);
             layout.invalidate();
         })
         .after(100, function () {
-            subtitle('<h2>The first client requests a value <em>M</em></h2>');
+            subtitle('<h2>A <span style="color:green">client</span> makes a request, so a proposer is chosen and broadcasts with Sequence ID 1</h2>');
             layout.invalidate();
         })
         .after(100, function () {
-            model().send(client('M'), node('A'), null, function () {
-                node('A')._state = 'proposer';
-                node('A')._currentSeqId = 20;
-                node('A')._value = 'M';
+            model().send(client('M'), node('C'), null, function () {
+                node('C')._state = 'proposer';
+                node('C')._currentSeqId = 1;
+                model().send(node('C'), node('A'), {type: 'PROPOSE'}, function () {
+                    node('A')._currentSeqId = 1;
+                    model().send(node('A'), node('C'), {type: 'PROMISE'});
+                    layout.invalidate();
+                });
+                model().send(node('C'), node('B'), {type: 'PROPOSE'}, function () {
+                    node('B')._currentSeqId = 1;
+                    model().send(node('B'), node('C'), {type: 'PROMISE'});
+                    layout.invalidate();
+                });
+                model().send(node('C'), node('D'), {type: 'PROPOSE'}, function () {
+                    node('D')._currentSeqId = 1;
+                    model().send(node('D'), node('C'), {type: 'PROMISE'});
+                    layout.invalidate();
+                });
+                model().send(node('C'), node('E'), {type: 'PROPOSE'}, function () {
+                    node('E')._currentSeqId = 1;
+                    model().send(node('E'), node('C'), {type: 'PROMISE'});
+                    layout.invalidate();
+                });
                 layout.invalidate();
             });
             layout.invalidate();
         })
         .after(1000, function () {
-            subtitle('<h2>...but before this <em>proposer</em> sends out <em>Propose</em> messages, a second client contacts a second proposer, which completes the <em>Propose/Promise</em> exchange</h2>');
+            subtitle('<h2>...but before this <em>proposer</em> sends out <em>Accept</em> messages, it fails</h2>')
             layout.invalidate();
         })
         .after(100, function () {
-            model().send(client('N'), node('D'), null, function () {
-                node('D')._state = 'proposer';
-                node('D')._currentSeqId = 30;
-                node('D')._value = 'N';
-                model().send(node('D'), node('B'), {type: 'PROPOSE'}, function () {
-                    node('B')._currentSeqId = 30;
-                    node('B')._value = 'N';
-                    model().send(node('B'), node('D'), {type: 'PROMISE'});
-                    layout.invalidate();
-                });
-                model().send(node('D'), node('C'), {type: 'PROPOSE'}, function () {
-                    node('C')._currentSeqId = 30;
-                    node('C')._value = 'N';
-                    model().send(node('C'), node('D'), {type: 'PROMISE'});
-                    layout.invalidate();
-                });
+            node('C')._state = 'stopped';
+            layout.invalidate();
+        })
+        .after(100, function () {
+            subtitle('<h2>Now a second replica tries to initiate a round using a higher Sequence ID, 2</h2>');
+            layout.invalidate();
+        })
+        .after(100, function () {
+            node('A')._state = 'proposer';
+            node('A')._currentSeqId = 2;
+            model().send(node('A'), node('B'), {type: 'PROPOSE'}, function () {
+                node('B')._currentSeqId = 2;
+                model().send(node('B'), node('A'), {type: 'PROMISE'});
+                layout.invalidate();
+            });
+            model().send(node('A'), node('D'), {type: 'PROPOSE'}, function () {
+                node('D')._currentSeqId = 2;
+                model().send(node('D'), node('A'), {type: 'PROMISE'});
+                layout.invalidate();
+            });
+            model().send(node('A'), node('E'), {type: 'PROPOSE'}, function () {
+                node('E')._currentSeqId = 2;
+                model().send(node('E'), node('A'), {type: 'PROMISE'});
+                layout.invalidate();
+            });
+            layout.invalidate();
+        })
+        .after(5000, function () {
+            subtitle('<h2>Now the original proposer recovers!</h2');
+            layout.invalidate();
+        })
+        .after(100, function () {
+            node('C')._state = 'replica';
+            layout.invalidate();
+        })
+        .after(100, function () {
+            subtitle('<h2>...and tries to initiate a round with Sequence ID 2</h2>');
+            layout.invalidate();
+        })
+        .after(100, function () {
+            node('C')._state = 'proposer';
+            node('C')._currentSeqId = 2;
+            model().send(node('C'), node('B'), {type: 'PROPOSE'});
+            model().send(node('C'), node('D'), {type: 'PROPOSE'});
+            model().send(node('C'), node('E'), {type: 'PROPOSE'});
+            layout.invalidate();
+        })
+        .after(2000, function () {
+            subtitle('<h2>These replicase reject this proposal...</h2>');
+            layout.invalidate();
+        })
+        .after(100, function () {
+            model().send(node('B'), node('C'), {type: 'PROMISE'});
+            model().send(node('D'), node('C'), {type: 'PROMISE'});
+            model().send(node('E'), node('C'), {type: 'PROMISE'});
+            layout.invalidate();
+        })
+        .after(2000, function () {
+            subtitle('<h2>...so the original proposer increases its Sequence ID to 3 and tries again.</h2>');
+            layout.invalidate();
+        })
+        .after(100, function () {
+            node('C')._currentSeqId = 3;
+            model().send(node('C'), node('B'), {type: 'PROPOSE'}, function () {
+                node('B')._currentSeqId = 3;
+                model().send(node('B'), node('C'), {type: 'PROMISE'});
+                layout.invalidate();
+            });
+            model().send(node('C'), node('D'), {type: 'PROPOSE'}, function () {
+                node('D')._currentSeqId = 3;
+                model().send(node('D'), node('C'), {type: 'PROMISE'});
+                layout.invalidate();
+            });
+            model().send(node('C'), node('E'), {type: 'PROPOSE'}, function () {
+                node('E')._currentSeqId = 3;
+                model().send(node('E'), node('C'), {type: 'PROMISE'});
                 layout.invalidate();
             });
             layout.invalidate();
         })
         .after(3000, function () {
-            subtitle('<h2>Bottom of Dueling Proposers</h2>');
+            subtitle('<h2>The replicas make a promise to the old leader.</h2>');
             layout.invalidate();
         })
-
-
-        //------------------------------
-        // Candidacy
-        //------------------------------
-        .at(model(), "stateChange", function(event) {
-            return (event.target.state() === "proposer");
+        .after(100, function () {
+            subtitle('<h2>The new leader now tries to commit its value, using Sequence ID 2...</h2>');
+            layout.invalidate();
         })
-        .after(1, function () {
-            subtitle('<h2>After the election timeout the follower becomes a candidate and starts a new <em>election term</em>...</h2>');
+        .after(100, function () {
+            model().send(node('A'), node('B'), {type: 'ACCEPT'});
+            model().send(node('A'), node('D'), {type: 'ACCEPT'});
+            model().send(node('A'), node('E'), {type: 'ACCEPT'});
+            layout.invalidate();
         })
-        .after(1, function () {
-            subtitle('<h2>...votes for itself...</h2>');
+        .after(2000, function () {
+            subtitle('<h2>...but the replicas reject it because they have since promised on a higher Sequence ID.</h2>');
+            layout.invalidate();
         })
-        .after(model().defaultNetworkLatency * 0.25, function () {
-            subtitle('<h2>...and sends out <em>Request Vote</em> messages to other nodes.</h2>');
+        .after(100, function () {
+            model().send(node('B'), node('A'), {type: 'ACKNOWLEDGE'});
+            model().send(node('D'), node('A'), {type: 'ACKNOWLEDGE'});
+            model().send(node('E'), node('A'), {type: 'ACKNOWLEDGE'});
+            layout.invalidate();
         })
-        .after(model().defaultNetworkLatency, function () {
-            subtitle('<h2>If the receiving node hasn\'t voted yet in this term then it votes for the candidate...</h2>');
+        .after(2000, function () {
+            subtitle('<h2>The new leader now increases its Sequence ID to 4 and initiates a new round</h2>');
+            layout.invalidate();
         })
-        .after(1, function () {
-            subtitle('<h2>...and the node resets its election timeout.</h2>');
+        .after(100, function () {
+            node('A')._currentSeqId = 4;
+            model().send(node('A'), node('B'), {type: 'PROPOSE'}, function () {
+                node('B')._currentSeqId = 4;
+                model().send(node('B'), node('A'), {type: 'PROMISE'});
+                layout.invalidate();
+            });
+            model().send(node('A'), node('D'), {type: 'PROPOSE'}, function () {
+                node('D')._currentSeqId = 4;
+                model().send(node('D'), node('A'), {type: 'PROMISE'});
+                layout.invalidate();
+            });
+            model().send(node('A'), node('E'), {type: 'PROPOSE'}, function () {
+                node('E')._currentSeqId = 4;
+                model().send(node('E'), node('A'), {type: 'PROMISE'});
+                layout.invalidate();
+            });
+            layout.invalidate();
         })
-
-
-        //------------------------------
-        // Leadership & heartbeat timeout.
-        //------------------------------
-        .at(model(), "stateChange", function(event) {
-            return (event.target.state() === "coordinator");
+        .after(3000, function () {
+            subtitle('<h2>The replicas have now promised Sequence ID 4</h2>');
+            layout.invalidate();
         })
-        .after(1, function () {
-            subtitle('<h2>Once a candidate has a majority of votes it becomes leader.</h2>');
+        .after(100, function () {
+            subtitle('<h2>The old leader now tries to commit its value using Sequence ID 3...</h2>');
+            layout.invalidate();
         })
-        .after(model().defaultNetworkLatency * 0.25, function () {
-            subtitle('<h2>The leader begins sending out <em>Append Entries</em> messages to its followers.</h2>');
+        .after(100, function () {
+            model().send(node('C'), node('B'), {type: 'ACCEPT'});
+            model().send(node('C'), node('D'), {type: 'ACCEPT'});
+            model().send(node('C'), node('E'), {type: 'ACCEPT'});
+            layout.invalidate();
         })
-        .after(1, function () {
-            subtitle('<h2>These messages are sent in intervals specified by the <span style="color:red">heartbeat timeout</span>.</h2>');
+        .after(2000, function () {
+            subtitle('<h2>...but the replicas reject it because they have since promised on a higher Sequence ID.</h2>');
+            layout.invalidate();
         })
-        .after(model().defaultNetworkLatency, function () {
-            subtitle('<h2>Followers then respond to each <em>Append Entries</em> message.</h2>');
+        .after(100, function () {
+            model().send(node('B'), node('C'), {type: 'ACKNOWLEDGE'});
+            model().send(node('D'), node('C'), {type: 'ACKNOWLEDGE'});
+            model().send(node('E'), node('C'), {type: 'ACKNOWLEDGE'});
+            layout.invalidate();
         })
-        .after(1, function () {
-            subtitle('', false);
+        .after(2000, function () {
+            subtitle('<h2>The old leader can now pick a higher Sequence ID...</h2>');
+            layout.invalidate();
         })
-        .after(model().heartbeatTimeout * 2, function () {
-            subtitle('<h2>This election term will continue until a follower stops receiving heartbeats and becomes a candidate.</h2>', false);
-        })
-        .after(100, wait).indefinite()
-        .after(1, function () {
-            subtitle('', false);
-        })
-
-        //------------------------------
-        // Leader re-election
-        //------------------------------
-        .after(model().heartbeatTimeout * 2, function () {
-            subtitle('<h2>Let\'s stop the leader and watch a re-election happen.</h2>', false);
-        })
-        .after(100, wait).indefinite()
-        .after(1, function () {
-            subtitle('', false);
-            model().coordinator().state("stopped")
-        })
-        .after(model().defaultNetworkLatency, function () {
-            model().ensureSingleProposer()
-        })
-        .at(model(), "stateChange", function(event) {
-            return (event.target.state() === "coordinator");
-        })
-        .after(1, function () {
-            subtitle('<h2>Node ' + model().coordinator().id + ' is now leader of term ' + model().coordinator().currentTerm() + '.</h2>', false);
-        })
-        .after(1, wait).indefinite()
-
-        //------------------------------
-        // Split Vote
-        //------------------------------
-        .after(1, function () {
-            subtitle('<h2>Requiring a majority of votes guarantees that only one leader can be elected per term.</h2>', false);
+        .after(100, function () {
+            subtitle('<h2>...which means we are stuck in a cycle, where neither proposer can complete a successful round.</h2>');
+            layout.invalidate();
         })
         .after(1, wait).indefinite()
-        .after(1, function () {
-            subtitle('<h2>If two nodes become candidates at the same time then a split vote can occur.</h2>', false);
-        })
-        .after(1, wait).indefinite()
-        .after(1, function () {
-            subtitle('<h2>Let\'s take a look at a split vote example...</h2>', false);
-        })
-        .after(1, wait).indefinite()
-        .after(1, function () {
-            subtitle('', false);
-            model().nodes.create("D").init().currentTerm(node("A").currentTerm());
-            cluster(["A", "B", "C", "D"]);
 
-            // Make sure two nodes become candidates at the same time.
-            model().resetToNextTerm();
-            var nodes = model().ensureSplitVote();
-
-            // Increase latency to some nodes to ensure obvious split.
-            model().latency(nodes[0].id, nodes[2].id, model().defaultNetworkLatency * 1.25);
-            model().latency(nodes[1].id, nodes[3].id, model().defaultNetworkLatency * 1.25);
-        })
-        .at(model(), "stateChange", function(event) {
-            return (event.target.state() === "proposer");
-        })
-        .after(model().defaultNetworkLatency * 0.25, function () {
-            subtitle('<h2>Two nodes both start an election for the same term...</h2>');
-        })
-        .after(model().defaultNetworkLatency * 0.75, function () {
-            subtitle('<h2>...and each reaches a single follower node before the other.</h2>');
-        })
-        .after(model().defaultNetworkLatency, function () {
-            subtitle('<h2>Now each candidate has 2 votes and can receive no more for this term.</h2>');
-        })
-        .after(1, function () {
-            subtitle('<h2>The nodes will wait for a new election and try again.</h2>', false);
-        })
-        .at(model(), "stateChange", function(event) {
-            return (event.target.state() === "coordinator");
-        })
-        .after(1, function () {
-            model().resetLatencies();
-            subtitle('<h2>Node ' + model().coordinator().id + ' received a majority of votes in term ' + model().coordinator().currentTerm() + ' so it becomes leader.</h2>', false);
-        })
-        .after(1, wait).indefinite()
 
         .then(function() {
             player.next();
