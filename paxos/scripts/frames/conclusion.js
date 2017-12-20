@@ -24,8 +24,9 @@ define([], function () {
 
         .after(500, function () {
             frame.model().title = '<h2 style="visibility:visible">For more information:</h2>'
-                        + '<h3 style="visibility:visible"><a href="https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf">The Raft Paper</a></h3>'
-                        + '<h3 style="visibility:visible"><a href="http://raftconsensus.github.io/">Raft Web Site</a></h3>'
+                        + '<h3 style="visibility:visible"><a href="https://lamport.azurewebsites.net/pubs/lamport-paxos.pdf">The Original Paxos Paper</a></h3>'
+                        + '<h3 style="visibility:visible"><a href="https://lamport.azurewebsites.net/pubs/paxos-simple.pdf">Simple Paxos Paper</a></h3>'
+                        + '<h3 style="visibility:visible"><a href="https://research.google.com/archive/paxos_made_live.html">Paxos Made Live (Google)</a></h3>'
                         + '<br/>' + frame.model().controls.html();
             layout.invalidate();
         })

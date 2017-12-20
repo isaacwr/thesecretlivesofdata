@@ -24,7 +24,7 @@ define([], function () {
             layout.invalidate();
         })
         .after(500, function () {
-            frame.model().title = '<h2 style="visibility:visible">Log Replication</h1>'
+            frame.model().title = '<h2 style="visibility:visible">Partition Tolerance</h1>'
                                 + '<br/>' + frame.model().controls.html();
             layout.invalidate();
         })
@@ -35,110 +35,26 @@ define([], function () {
         })
 
         //------------------------------
-        // Cluster Initialization
-        //------------------------------
-        .after(300, function () {
-            model().nodes.create("A");
-            model().nodes.create("B");
-            model().nodes.create("C");
-            cluster(["A", "B", "C"]);
-            layout.invalidate();
-        })
-        .after(500, function () {
-            model().forceImmediateLeader();
-        })
-
-
-        //------------------------------
-        // Overview
-        //------------------------------
-        .then(function () {
-            subtitle('<h2>Once we have a leader elected we need to replicate all changes to our system to all nodes.</h2>', false);
-        })
-        .then(wait).indefinite()
-        .then(function () {
-            subtitle('<h2>This is done by using the same <em>Append Entries</em> message that was used for heartbeats.</h2>', false);
-        })
-        .then(wait).indefinite()
-        .then(function () {
-            subtitle('<h2>Let\'s walk through the process.</h2>', false);
-        })
-        .then(wait).indefinite()
-
-
-        //------------------------------
-        // Single Entry Replication
-        //------------------------------
-        .then(function () {
-            model().clients.create("X");
-            subtitle('<h2>First a client sends a change to the leader.</h2>', false);
-        })
-        .then(wait).indefinite()
-        .then(function () {
-            client("X").send(model().leader(), "SET 5");
-        })
-        .after(model().defaultNetworkLatency, function() {
-            subtitle('<h2>The change is appended to the leader\'s log...</h2>');
-        })
-        .at(model(), "appendEntriesRequestsSent", function () {})
-        .after(model().defaultNetworkLatency * 0.25, function(event) {
-            subtitle('<h2>...then the change is sent to the followers on the next heartbeat.</h2>');
-        })
-        .after(1, clear)
-        .at(model(), "commitIndexChange", function (event) {
-            if(event.target === model().leader()) {
-                subtitle('<h2>An entry is committed once a majority of followers acknowledge it...</h2>');
-            }
-        })
-        .after(model().defaultNetworkLatency * 0.25, function(event) {
-            subtitle('<h2>...and a response is sent to the client.</h2>');
-        })
-        .after(1, clear)
-        .after(model().defaultNetworkLatency, function(event) {
-            subtitle('<h2>Now let\'s send a command to increment the value by "2".</h2>');
-            client("X").send(model().leader(), "ADD 2");
-        })
-        .after(1, clear)
-        .at(model(), "recv", function (event) {
-            subtitle('<h2>Our system value is now updated to "7".</h2>', false);
-        })
-        .after(1, wait).indefinite()
-
-
-        //------------------------------
         // Network Partition
         //------------------------------
         .after(1, function () {
-            removeAllNodes();
-            model().nodes.create("A");
-            model().nodes.create("B");
-            model().nodes.create("C");
-            model().nodes.create("D");
-            model().nodes.create("E");
+            model().nodes.create('A');
+            model().nodes.create('B');
+            model().nodes.create('C');
+            model().nodes.create('D');
+            model().nodes.create('E');
+            model().clients.create('Y');
             layout.invalidate();
         })
-        .after(500, function () {
-            node("A").init();
-            node("B").init();
-            node("C").init();
-            node("D").init();
-            node("E").init();
-            cluster(["A", "B", "C", "D", "E"]);
-            model().resetToNextTerm();
-            node("B").state("leader");
+        .after(100, function () {
+            subtitle('<h2>Paxos can stay consistent in the face of network partitions.</h2>');
         })
-        .after(1, function () {
-            subtitle('<h2>Raft can even stay consistent in the face of network partitions.</h2>', false);
+        .after(100, function () {
+            subtitle('<h2>Let\'s add a partition to separate A & B from C, D & E.</h2>');
         })
-        .after(1, wait).indefinite()
-        .after(1, function () {
-            subtitle('<h2>Let\'s add a partition to separate A & B from C, D & E.</h2>', false);
-        })
-        .after(1, wait).indefinite()
         .after(1, function () {
             model().latency("A", "C", 0).latency("A", "D", 0).latency("A", "E", 0);
             model().latency("B", "C", 0).latency("B", "D", 0).latency("B", "E", 0);
-            model().ensureExactCandidate("C");
         })
         .after(model().defaultNetworkLatency * 0.5, function () {
             var p = model().partitions.create("-");
@@ -147,62 +63,132 @@ define([], function () {
             p.y1 = p.y2 = Math.round(node("B").y + node("C").y) / 2;
             layout.invalidate();
         })
-        .at(model(), "stateChange", function(event) {
-            return (event.target.state() === "leader");
+        .after(100, function () {
+            subtitle('<h2>Because of our partition we can now have the risk of inconsistent reads and updates.</h2>');
         })
-        .after(1, function () {
-            subtitle('<h2>Because of our partition we now have two leaders in different terms.</h2>', false);
+        .after(100, function () {
+            subtitle('<h2>Let the <span style="color:green">client</span> try to update both clusters.</h2>');
         })
-        .after(1, wait).indefinite()
-        .after(1, function () {
-            model().clients.create("Y");
-            subtitle('<h2>Let\'s add another client and try to update both leaders.</h2>', false);
+        .after(100, function () {
+            subtitle('<h2>The client will try to set the value of Node B to "3".</h2>');
+            frame.model().send(client('Y'), node('B'), null, function() {
+                node('B')._value = '3';
+                node('B')._currentSeqId = 2;
+                node('B')._state = 'proposer';
+                layout.invalidate();
+            });
         })
-        .after(1, wait).indefinite()
-        .after(1, function () {
-            client("Y").send(node("B"), "SET 3");
-            subtitle('<h2>One client will try to set the value of node B to "3".</h2>', false);
+        .after(1000, function () {
+            subtitle('<h2>Node B now tries to complete a round of paxos.</h2>');
         })
-        .after(1, wait).indefinite()
-        .after(1, function () {
-            subtitle('<h2>Node B cannot replicate to a majority so its log entry stays uncommitted.</h2>', false);
+        .after(100, function () {
+            model().send(node('B'), node('A'), {type:'PROPOSE'}, function () {
+                node('A')._currentSeqId = 2;
+                node('A')._coordinatorId = 'B';
+                model().send(node('A'), node('B'), {type:'PROMISE'});
+                layout.invalidate();
+            });
         })
-        .after(1, wait).indefinite()
-        .after(1, function () {
-            var leader = model().leader(["C", "D", "E"]);
-            client("X").send(leader, "SET 8");
-            subtitle('<h2>The other client will try to set the value of node ' + leader.id + ' to "8".</h2>', false);
+        .after(2500, function () {
+            subtitle('<h2>Node B is not able to access a majority of <em>Acceptors</em>, and so is not able to continue this round.</h2>');
+            layout.invalidate();
         })
-        .after(1, wait).indefinite()
-        .after(1, function () {
-            subtitle('<h2>This will succeed because it can replicate to a majority.</h2>', false);
+        .after(250, function () {
+            node('B')._state = 'replica';
+            node('B')._value = '';
+            layout.invalidate();
         })
-        .after(1, wait).indefinite()
-        .after(1, function () {
-            subtitle('<h2>Now let\'s heal the network partition.</h2>', false);
+        .after(250, function () {
+            subtitle('<h2>Now the <span stype="color:green">client</span> tries to set the value of Node C to "5".</h2>');
+            layout.invalidate();
         })
-        .after(1, wait).indefinite()
-        .after(1, function () {
+        .after(100, function () {
+            frame.model().send(client('Y'), node('C'), null, function() {
+                node('C')._value = '5';
+                node('C')._currentSeqId = 7;
+                node('C')._state = 'proposer';
+                layout.invalidate();
+            });
+            layout.invalidate();
+        })
+        .after(1000, function () {
+            subtitle('<h2>Node C initiates a round of Paxos...</h2>');
+            layout.invalidate();
+        })
+        .after(100, function () {
+            model().send(node('C'), node('D'), {type:'PROPOSE'}, function () {
+                node('D')._currentSeqId = 7;
+                node('D')._coordinatorId = 'C';
+                model().send(node('D'), node('C'), {type:'PROMISE'});
+                layout.invalidate();
+            });
+            model().send(node('C'), node('E'), {type:'PROPOSE'}, function () {
+                node('E')._currentSeqId = 7;
+                node('E')._coordinatorId = 'C';
+                model().send(node('E'), node('C'), {type:'PROMISE'}, function () {
+                    node('C').state('coordinator');
+                    layout.invalidate();
+                });
+                layout.invalidate();
+            });
+            layout.invalidate();
+        })
+        .after(2500, function () {
+            subtitle('<h2>Node C is able to reach a majority of <em>Acceptors</em> and is elected coordinator.</h2>');
+            layout.invalidate();
+        })
+        .after(100, function () {
+            subtitle('<h2>...so this round continues.</h2>');
+            layout.invalidate();
+        })
+        .after(100, function () {
+            model().send(node('C'), node('D'), {type:'ACCEPT'}, function () {
+                node('D')._value = '5';
+                model().send(node('D'), node('C'), {type:'ACKNOWLEDGE'});
+                layout.invalidate();
+            });
+            model().send(node('C'), node('E'), {type:'ACCEPT'}, function () {
+                node('E')._value = '5';
+                model().send(node('E'), node('C'), {type:'ACKNOWLEDGE'});
+                layout.invalidate();
+            });
+            layout.invalidate();
+        }) 
+        .after(100, wait).indefinite()
+        .after(100, function () {
+            subtitle('<h2>Now let\'s heal the network partition.</h2>');
+        })
+        .after(100, function () {
             model().partitions.removeAll();
             layout.invalidate();
         })
-        .after(200, function () {
-            model().resetLatencies();
-        })
-        .at(model(), "stateChange", function(event) {
-            return (event.target.id === "B" && event.target.state() === "follower");
-        })
         .after(1, function () {
-            subtitle('<h2>Node B will see the higher election term and step down.</h2>');
+            model().latency("A", "C", 750).latency("A", "D", 750).latency("A", "E", 750);
+            model().latency("B", "C", 750).latency("B", "D", 750).latency("B", "E", 750);
         })
-        .after(1, function () {
-            subtitle('<h2>Both nodes A & B will roll back their uncommitted entries and match the new leader\'s log.</h2>');
+        .after(100, function () {
+            subtitle('<h2>A & B will learn about the successful rounds from the other side via a future <em>Propose</em> message.</h2>');
         })
-        .after(1, wait).indefinite()
-        .after(1, function () {
-            subtitle('<h2>Our log is now consistent across our cluster.</h2>', false);
+        .after(100, function () {
+            model().send(node('C'), node('A'), {type: 'PROPOSE'}, function () {
+                node('A')._value = '5';
+                node('A')._currentSeqId = 7;
+                node('A')._coordinatorId = 'C';
+                model().send(node('A'), node('C'), {type: 'PROMISE'});
+                layout.invalidate();
+            });
+            model().send(node('C'), node('B'), {type: 'PROPOSE'}, function () {
+                node('B')._value = '5';
+                node('B')._currentSeqId = 7;
+                node('B')._coordinatorId = 'C';
+                model().send(node('B'), node('C'), {type: 'PROMISE'});
+                layout.invalidate();
+            });
+            layout.invalidate();
         })
-        .after(1, wait).indefinite()
+        .after(2500, function () {
+            subtitle('<h2>Both Nodes A & B will match the new leader\'s state.</h2>');
+        })
 
         .then(function() {
             player.next();
