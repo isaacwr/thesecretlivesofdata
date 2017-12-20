@@ -321,7 +321,7 @@ define([], function () {
         })
         .after(100, function () {
             frame.snapshot();
-            subtitle('<h2>Now, it is important that the most recent promise made by the <em>Replicas</em> had a high Sequence ID</h2>');
+            subtitle('<h2>Now, it is important that the most recent promise made by the <em>Acceptors</em> had a high Sequence ID</h2>');
             layout.invalidate();
         })
         .after(100, function () {
@@ -353,7 +353,7 @@ define([], function () {
             layout.invalidate();
         })
         .after(1000, function () {
-            subtitle('<h2>Now the new leader broadcasts the Accept message.</h2>');
+            subtitle('<h2>Now the new leader broadcasts the <em>Accept</em> message.</h2>');
             layout.invalidate();
         })
         .after(100, function () {
@@ -393,7 +393,6 @@ define([], function () {
         })
         .after(100, function() {
             subtitle('<h2>The final error case is called Dueling Proposers, where two concurrent proposers are not able to complete a full round.</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             model().nodes.create('A');
@@ -408,7 +407,6 @@ define([], function () {
         })
         .after(100, function () {
             subtitle('<h2>A <span style="color:green">client</span> makes a request, so a proposer is chosen and broadcasts with Sequence ID 1</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             model().send(client('M'), node('C'), null, function () {
@@ -438,9 +436,8 @@ define([], function () {
             });
             layout.invalidate();
         })
-        .after(1000, function () {
-            subtitle('<h2>...but before this <em>proposer</em> sends out <em>Accept</em> messages, it fails</h2>')
-            layout.invalidate();
+        .after(3300, function () {
+            subtitle('<h2>...but before this <em>proposer</em> sends out <em>Accept</em> messages, it fails</h2>');
         })
         .after(100, function () {
             node('C')._state = 'stopped';
@@ -448,7 +445,6 @@ define([], function () {
         })
         .after(100, function () {
             subtitle('<h2>Now a second replica tries to initiate a round using a higher Sequence ID, 2</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             node('A')._state = 'proposer';
@@ -472,7 +468,6 @@ define([], function () {
         })
         .after(5000, function () {
             subtitle('<h2>Now the original proposer recovers!</h2');
-            layout.invalidate();
         })
         .after(100, function () {
             node('C')._state = 'replica';
@@ -480,7 +475,6 @@ define([], function () {
         })
         .after(100, function () {
             subtitle('<h2>...and tries to initiate a round with Sequence ID 2</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             node('C')._state = 'proposer';
@@ -492,7 +486,6 @@ define([], function () {
         })
         .after(2000, function () {
             subtitle('<h2>These replicase reject this proposal...</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             model().send(node('B'), node('C'), {type: 'PROMISE'});
@@ -502,7 +495,6 @@ define([], function () {
         })
         .after(2000, function () {
             subtitle('<h2>...so the original proposer increases its Sequence ID to 3 and tries again.</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             node('C')._currentSeqId = 3;
@@ -525,11 +517,9 @@ define([], function () {
         })
         .after(3000, function () {
             subtitle('<h2>The replicas make a promise to the old leader.</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             subtitle('<h2>The new leader now tries to commit its value, using Sequence ID 2...</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             model().send(node('A'), node('B'), {type: 'ACCEPT'});
@@ -539,7 +529,6 @@ define([], function () {
         })
         .after(2000, function () {
             subtitle('<h2>...but the replicas reject it because they have since promised on a higher Sequence ID.</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             model().send(node('B'), node('A'), {type: 'ACKNOWLEDGE'});
@@ -549,7 +538,6 @@ define([], function () {
         })
         .after(2000, function () {
             subtitle('<h2>The new leader now increases its Sequence ID to 4 and initiates a new round</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             node('A')._currentSeqId = 4;
@@ -572,11 +560,9 @@ define([], function () {
         })
         .after(3000, function () {
             subtitle('<h2>The replicas have now promised Sequence ID 4</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             subtitle('<h2>The old leader now tries to commit its value using Sequence ID 3...</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             model().send(node('C'), node('B'), {type: 'ACCEPT'});
@@ -586,7 +572,6 @@ define([], function () {
         })
         .after(2000, function () {
             subtitle('<h2>...but the replicas reject it because they have since promised on a higher Sequence ID.</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             model().send(node('B'), node('C'), {type: 'ACKNOWLEDGE'});
@@ -596,13 +581,11 @@ define([], function () {
         })
         .after(2000, function () {
             subtitle('<h2>The old leader can now pick a higher Sequence ID...</h2>');
-            layout.invalidate();
         })
         .after(100, function () {
             subtitle('<h2>...which means we are stuck in a cycle, where neither proposer can complete a successful round.</h2>');
-            layout.invalidate();
         })
-        .after(1, wait).indefinite()
+        .after(100, wait).indefinite()
 
 
         .then(function() {

@@ -45,7 +45,7 @@ define(["../model/log_entry"], function (LogEntry) {
         .after(100, function () {
             frame.snapshot();
             node("b")._state = "replica";
-            model().subtitle = '<h2>The <em>Replica</em> state,</h2>'
+            model().subtitle = '<h2>The <em>Acceptor</em> state,</h2>'
                            + model().controls.html();
             layout.invalidate();
         })
@@ -81,7 +81,7 @@ define(["../model/log_entry"], function (LogEntry) {
         })
         .after(1, wait).indefinite()
         .after(300, function () {
-            model().subtitle = '<h2>All our nodes, start in the replica state.</h2>'
+            model().subtitle = '<h2>All our nodes, start in the acceptor state.</h2>'
                            + model().controls.html();
             layout.invalidate();
         })
@@ -248,11 +248,13 @@ define(["../model/log_entry"], function (LogEntry) {
         .after(300, function () {
             frame.snapshot();
             model().send(node("b"), node("a"), {type:"ACCEPT"}, function () {
-                node("a")._log.push(new LogEntry(model(), 2, 1, "SET 8"));
+                //node("a")._log.push(new LogEntry(model(), 2, 1, "SET 8"));
+                node("a")._value = "8";
                 layout.invalidate();
             });
             model().send(node("b"), node("c"), {type:"ACCEPT"}, function () {
-                node("c")._log.push(new LogEntry(model(), 2, 1, "SET 8"));
+                //node("c")._log.push(new LogEntry(model(), 2, 1, "SET 8"));
+                node("c")._value = "8";
                 layout.invalidate();
             });
             model().subtitle = '<h2>Replicas can either <em>acknowledge</em> or <em>reject</em> the new value.</h2>'

@@ -56,7 +56,7 @@ define([], function () {
             layout.invalidate();
         })
         .after(600, function () {
-            frame.model().subtitle = '<h3>For this example, you can think of our <span style="color:steelblue">node</span> as a database server that stores a single value.</h3>'
+            frame.model().subtitle = '<h2>For this example, you can think of our <span style="color:steelblue">node</span> as a database server that stores a single value.</h2>'
                            + frame.model().controls.html();
             layout.invalidate();
         })
@@ -75,7 +75,7 @@ define([], function () {
             layout.invalidate();
         })
         .after(1000, function () {
-            frame.model().subtitle = '<h3>We also have a <span style="color:green">client</span> that can send a value to the server.</h3>'
+            frame.model().subtitle = '<h2>We also have a <span style="color:green">client</span> that can send a value to the server.</h2>'
                            + frame.model().controls.html();
             layout.invalidate();
         })
@@ -101,7 +101,7 @@ define([], function () {
         })
         .after(100, wait).indefinite()
         .after(100, function () {
-            frame.model().subtitle = '<h3>Coming to agreement, or <em>consensus</em>, on that value is easy with one node.</h3>'
+            frame.model().subtitle = '<h2>Coming to agreement, or <em>consensus</em>, on that value is easy with one node.</h2>'
                            + frame.model().controls.html();
             layout.invalidate();
         })
@@ -110,7 +110,7 @@ define([], function () {
 
         .after(100, function () {
             frame.snapshot();
-            frame.model().subtitle = '<h3>But how do we come to consensus if we have multiple nodes?</h3>'
+            frame.model().subtitle = '<h2>But how do we come to consensus if we have multiple nodes?</h2>'
                            + frame.model().controls.html();
             layout.invalidate();
         })
@@ -127,7 +127,7 @@ define([], function () {
 
         .after(100, function () {
             frame.snapshot();
-            frame.model().subtitle = '<h3>That\'s the problem of <em>distributed consensus</em>.</h3>'
+            frame.model().subtitle = '<h2>That\'s the problem of <em>distributed consensus</em>.</h2>'
                            + frame.model().controls.html();
             layout.invalidate();
         })
