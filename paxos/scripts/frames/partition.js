@@ -47,6 +47,7 @@ define([], function () {
             layout.invalidate();
         })
         .after(100, function () {
+            frame.snapshot();
             subtitle('<h2>Paxos can stay consistent in the face of network partitions.</h2>');
         })
         .after(100, function () {
@@ -79,6 +80,7 @@ define([], function () {
             });
         })
         .after(1000, function () {
+            frame.snapshot();
             subtitle('<h2>Node B now tries to complete a round of paxos.</h2>');
         })
         .after(100, function () {
@@ -112,6 +114,7 @@ define([], function () {
             layout.invalidate();
         })
         .after(1000, function () {
+            frame.snapshot();
             subtitle('<h2>Node C initiates a round of Paxos...</h2>');
             layout.invalidate();
         })
@@ -156,6 +159,7 @@ define([], function () {
         }) 
         .after(100, wait).indefinite()
         .after(100, function () {
+            frame.snapshot();
             subtitle('<h2>Now let\'s heal the network partition.</h2>');
         })
         .after(100, function () {

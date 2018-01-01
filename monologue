@@ -1,0 +1,7 @@
+The distributed consensus problem requires a collection of processes to agree upon a value or state. These processes are crash-prone and may fail and optionally restart. In addition, processes can only communicate via messages over an imperfect network, with arbitrary latencies and dropped packets.  
+
+Distributing a system, that is, having multiple (typically geographically distributed) nodes, is often neccessary for high performance or fault tolerant applications.
+
+Consensus is important because it provides the underlying facilities for distributed databases and logs, such as Google's `Chubby` distributed lock.
+
+This problem is difficult because as processes crash or fail to communicate, the system must still achieve data integreity guarantees, like not getting out of sync (i.e. the system "agrees" on two separate values), or losing data.

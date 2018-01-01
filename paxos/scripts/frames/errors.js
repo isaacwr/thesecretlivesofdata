@@ -17,11 +17,12 @@ define([], function () {
         //------------------------------
         // Title
         //------------------------------
-        frame.after(1, function() {
+        frame.after(0, function() {
             model().clear();
             layout.invalidate();
         })
         .after(500, function () {
+            frame.snapshot();
             frame.model().title = '<h2 style="visibility:visible">Error Cases</h1>'
                                 + '<br/>' + frame.model().controls.html();
             layout.invalidate();
@@ -42,6 +43,7 @@ define([], function () {
             cluster(['A', 'B', 'C']);
         })
         .after(1, function () {
+            frame.snapshot();
             model().ensureSingleProposer();
             model().subtitle = '<h2>In Paxos there are a number of different failure cases.</h2>'
                            + model().controls.html();
@@ -206,6 +208,7 @@ define([], function () {
             layout.invalidate();
         })
         .after(5000, function () {
+            frame.snapshot();
             subtitle('<h2>But what happens when a proposer fails?</h2>')
         })
 
@@ -392,6 +395,7 @@ define([], function () {
             layout.invalidate();
         })
         .after(100, function() {
+            frame.snapshot();
             subtitle('<h2>The final error case is called Dueling Proposers, where two concurrent proposers are not able to complete a full round.</h2>');
         })
         .after(100, function () {

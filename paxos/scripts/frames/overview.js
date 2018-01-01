@@ -22,7 +22,7 @@ define(["../model/log_entry"], function (LogEntry) {
         })
 
         .after(800, function () {
-            model().subtitle = '<h2><em>Paxos</em> is a protocol for acheiving distributed consensus.</h2>'
+            model().subtitle = '<h2><em>Paxos</em> is a protocol for achieving distributed consensus.</h2>'
                            + model().controls.html();
             layout.invalidate();
         })
@@ -108,6 +108,7 @@ define(["../model/log_entry"], function (LogEntry) {
             layout.invalidate();
         })
         .after(500, function () {
+            frame.snapshot();
             frame.model().title = '<h2 style="visibility:visible"><em>Prepare</em> Phase</h1>'
                                 + '<br/>' + frame.model().controls.html();
             layout.invalidate();
@@ -210,6 +211,7 @@ define(["../model/log_entry"], function (LogEntry) {
             layout.invalidate();
         })
         .after(500, function () {
+            frame.snapshot();
             frame.model().title = '<h2 style="visibility:visible"><em>Accept</em> Phase</h1>'
                                 + '<br/>' + frame.model().controls.html();
             layout.invalidate();
